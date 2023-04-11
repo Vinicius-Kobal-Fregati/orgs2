@@ -36,7 +36,8 @@ abstract class AppDatabase : RoomDatabase() {
                 "orgs.db"
             )
                 // Evitar ao máximo essa solução pois se houver usuário, ele perderá todos os dados
-                .fallbackToDestructiveMigration()
+                //.fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2)
                 .build().also {
                     db = it
                 }
