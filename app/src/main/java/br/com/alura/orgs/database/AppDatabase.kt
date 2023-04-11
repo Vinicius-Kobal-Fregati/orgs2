@@ -7,19 +7,24 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import br.com.alura.orgs.database.converter.Converters
 import br.com.alura.orgs.database.dao.ProdutoDao
+import br.com.alura.orgs.database.dao.UsuarioDao
 import br.com.alura.orgs.model.Produto
+import br.com.alura.orgs.model.Usuario
 
 @Database(
     entities = [
-        Produto::class
+        Produto::class,
+        Usuario::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun produtoDao(): ProdutoDao
+
+    abstract fun usuarioDao(): UsuarioDao
 
     companion object {
         @Volatile
@@ -29,9 +34,12 @@ abstract class AppDatabase : RoomDatabase() {
                 context,
                 AppDatabase::class.java,
                 "orgs.db"
-            ).build().also {
-                db = it
-            }
+            )
+                // Evitar ao máximo essa solução pois se houver usuário, ele perderá todos os dados
+                .fallbackToDestructiveMigration()
+                .build().also {
+                    db = it
+                }
         }
     }
 }
