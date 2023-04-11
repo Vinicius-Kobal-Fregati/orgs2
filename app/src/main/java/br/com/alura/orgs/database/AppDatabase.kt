@@ -14,9 +14,9 @@ import br.com.alura.orgs.model.Usuario
 @Database(
     entities = [
         Produto::class,
-        //Usuario::class
+        Usuario::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -24,7 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun produtoDao(): ProdutoDao
 
-    //abstract fun usuarioDao(): UsuarioDao
+    abstract fun usuarioDao(): UsuarioDao
 
     companion object {
         @Volatile
@@ -37,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
             )
                 // Evitar ao máximo essa solução pois se houver usuário, ele perderá todos os dados
                 //.fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2)
                 .build().also {
                     db = it
                 }
