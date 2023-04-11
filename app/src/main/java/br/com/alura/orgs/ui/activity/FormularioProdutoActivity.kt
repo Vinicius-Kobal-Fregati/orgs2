@@ -1,7 +1,9 @@
 package br.com.alura.orgs.ui.activity
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.lifecycle.lifecycleScope
 import br.com.alura.orgs.database.AppDatabase
 import br.com.alura.orgs.database.dao.ProdutoDao
@@ -9,9 +11,11 @@ import br.com.alura.orgs.database.dao.UsuarioDao
 import br.com.alura.orgs.databinding.ActivityFormularioProdutoBinding
 import br.com.alura.orgs.extensions.tentaCarregarImagem
 import br.com.alura.orgs.model.Produto
+import br.com.alura.orgs.preferences.dataStore
+import br.com.alura.orgs.preferences.usuarioLogadoPreferences
 import br.com.alura.orgs.ui.dialog.FormularioImagemDialog
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 class FormularioProdutoActivity : AppCompatActivity() {
@@ -19,6 +23,13 @@ class FormularioProdutoActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityFormularioProdutoBinding.inflate(layoutInflater)
     }
+    private val usuarioDao by lazy {
+        AppDatabase.instancia(this).usuarioDao()
+    }
+    private var job: Job? = null
+
+    // Utilizando coroutines sem lifecycle e sem auxílio de escopo do Room
+    private val scope = MainScope()
     private var url: String? = null
     private var produtoId = 0L
     private val produtoDao: ProdutoDao by lazy {
@@ -39,6 +50,20 @@ class FormularioProdutoActivity : AppCompatActivity() {
                 }
         }
         tentaCarregarProduto()
+
+        job = scope.launch {
+            withContext(Dispatchers.IO) {
+                this@FormularioProdutoActivity.dataStore.data.collect { preferences ->
+                    preferences[usuarioLogadoPreferences]?.let { id ->
+                        launch {
+                            usuarioDao.buscaPorId(id).collect { usuario ->
+                                Log.i("FormularioProdutos", "onCreate: $usuario")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun tentaCarregarProduto() {
@@ -48,6 +73,11 @@ class FormularioProdutoActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         tentaBuscarProduto()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job?.cancel()
     }
 
     private fun tentaBuscarProduto() {
