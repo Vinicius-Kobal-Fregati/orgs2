@@ -11,22 +11,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Orgs">
+        <activity android:name=".ui.activity.PerfilUsuarioActivity" />
         <activity
             android:name=".ui.activity.FormularioCadastroUsuarioActivity"
             android:label="Cadastrar usuário" />
         <activity
             android:name=".ui.activity.LoginActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Orgs.NoActionBar">
+            android:theme="@style/Theme.Orgs.NoActionBar" />
+        <activity android:name=".ui.activity.DetalhesProdutoActivity" />
+        <activity android:name=".ui.activity.FormularioProdutoActivity" />
+        <activity
+            android:name=".ui.activity.ListaProdutosActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.activity.DetalhesProdutoActivity" />
-        <activity android:name=".ui.activity.FormularioProdutoActivity" />
-        <activity android:name=".ui.activity.ListaProdutosActivity" />
 
         <meta-data
             android:name="preloaded_fonts"

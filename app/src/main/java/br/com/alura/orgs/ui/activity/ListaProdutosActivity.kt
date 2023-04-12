@@ -2,19 +2,20 @@ package br.com.alura.orgs.ui.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
+import android.view.Menu
+import android.view.MenuItem
 import androidx.lifecycle.lifecycleScope
+import br.com.alura.orgs.R
 import br.com.alura.orgs.database.AppDatabase
 import br.com.alura.orgs.databinding.ActivityListaProdutosActivityBinding
-import br.com.alura.orgs.preferences.dataStore
-import br.com.alura.orgs.preferences.usuarioLogadoPreferences
+import br.com.alura.orgs.extensions.vaiPara
 import br.com.alura.orgs.ui.recyclerview.adapter.ListaProdutosAdapter
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
 
-class ListaProdutosActivity : AppCompatActivity() {
+class ListaProdutosActivity : UsuarioBaseActivity() {
 
     private val adapter = ListaProdutosAdapter(context = this)
     private val binding by lazy {
@@ -24,10 +25,6 @@ class ListaProdutosActivity : AppCompatActivity() {
         val db = AppDatabase.instancia(this)
         db.produtoDao()
     }
-    private val usuarioDao by lazy {
-        AppDatabase.instancia(this)
-            .usuarioDao()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,22 +33,12 @@ class ListaProdutosActivity : AppCompatActivity() {
         configuraFab()
         lifecycleScope.launch {
             launch {
-                // Sempre que executamos o flow, ele deve ter uma coroutine só para ele
-                // Visto que pode travar ela
-                produtoDao.buscaTodos().collect { produtos ->
-                    adapter.atualiza(produtos)
-                }
-            }
-
-            launch {
-                // Assim recuperamos os dados do dataStore
-                dataStore.data.collect { preferences ->
-                    preferences[usuarioLogadoPreferences]?.let { usuarioId ->
-                        usuarioDao.buscaPorId(usuarioId).collect {
-                            Log.i("ListaProdutos", "onCreate: $it")
-                        }
+                usuario
+                    // Só acessa o collect se não for null
+                    .filterNotNull()
+                    .collect {
+                        buscaProdutosUsuario()
                     }
-                }
             }
 
             // Vamos substituir nosso extra pelo data store (preference)
@@ -62,6 +49,31 @@ class ListaProdutosActivity : AppCompatActivity() {
 //                    }
 //                }
 //            }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_lista_produtos, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.menu_lista_produtos_sair_do_app -> {
+                lifecycleScope.launch {
+                    deslogaUsuario()
+                }
+            }
+            R.id.menu_lista_produtos_perfil -> {
+                vaiPara(PerfilUsuarioActivity::class.java)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private suspend fun buscaProdutosUsuario() {
+        produtoDao.buscaTodos().collect { produtos ->
+            adapter.atualiza(produtos)
         }
     }
 
