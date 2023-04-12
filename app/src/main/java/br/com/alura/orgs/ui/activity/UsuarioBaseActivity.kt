@@ -35,6 +35,7 @@ abstract class UsuarioBaseActivity : AppCompatActivity() {
     }
 
     private suspend fun verificaUsuarioLogado() {
+        // Assim recuperamos os dados do dataStore
         dataStore.data.collect { preferences ->
             preferences[usuarioLogadoPreferences]?.let { usuarioId ->
                 buscaUsuario(usuarioId)
