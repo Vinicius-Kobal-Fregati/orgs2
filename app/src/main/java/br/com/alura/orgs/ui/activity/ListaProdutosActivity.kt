@@ -16,12 +16,13 @@ import br.com.alura.orgs.preferences.usuarioLogadoPreferences
 import br.com.alura.orgs.ui.recyclerview.adapter.ListaProdutosAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 
-class ListaProdutosActivity : AppCompatActivity() {
+class ListaProdutosActivity : UsuarioBaseActivity() {
 
     private val adapter = ListaProdutosAdapter(context = this)
     private val binding by lazy {
@@ -30,10 +31,6 @@ class ListaProdutosActivity : AppCompatActivity() {
     private val produtoDao by lazy {
         val db = AppDatabase.instancia(this)
         db.produtoDao()
-    }
-    private val usuarioDao by lazy {
-        AppDatabase.instancia(this)
-            .usuarioDao()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,7 +41,12 @@ class ListaProdutosActivity : AppCompatActivity() {
         lifecycleScope.launch {
             launch {
                 // Assim recuperamos os dados do dataStore
-                verificaUsuarioLogado()
+                usuario
+                    // Só acessa o collect se não for null
+                    .filterNotNull()
+                    .collect {
+                        buscaProdutosUsuario()
+                    }
             }
 
             // Vamos substituir nosso extra pelo data store (preference)
@@ -74,45 +76,9 @@ class ListaProdutosActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    private suspend fun verificaUsuarioLogado() {
-        dataStore.data.collect { preferences ->
-            preferences[usuarioLogadoPreferences]?.let { usuarioId ->
-                buscaUsuario(usuarioId)
-            } ?: vaiParaLogin()
-        }
-    }
-
-    private fun buscaUsuario(usuarioId: String) {
-        lifecycleScope.launch {
-            // O first or null faz a busca apenas uma vez do flow, ele não se inscreve nele,
-            // diferente do collect
-            usuarioDao.buscaPorId(usuarioId)
-                .firstOrNull()?.let {
-                    launch {
-                        // Sempre que executamos o flow, ele deve ter uma coroutine só para ele
-                        // Visto que pode travar ela
-                        buscaProdutosUsuario()
-                    }
-                }
-        }
-    }
-
     private suspend fun buscaProdutosUsuario() {
         produtoDao.buscaTodos().collect { produtos ->
             adapter.atualiza(produtos)
-        }
-    }
-
-    private fun vaiParaLogin() {
-        vaiPara(LoginActivity::class.java)
-        // Com esse finish, não é possível do usuário voltar do login para essa tela
-        finish()
-    }
-
-    private suspend fun deslogaUsuario() {
-        dataStore.edit { preferences ->
-            // Esse código vai remover a chave a acionar os flows dela
-            preferences.remove(usuarioLogadoPreferences)
         }
     }
 

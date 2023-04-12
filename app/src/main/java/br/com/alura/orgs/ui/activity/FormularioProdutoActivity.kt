@@ -16,9 +16,10 @@ import br.com.alura.orgs.preferences.usuarioLogadoPreferences
 import br.com.alura.orgs.ui.dialog.FormularioImagemDialog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filterNotNull
 import java.math.BigDecimal
 
-class FormularioProdutoActivity : AppCompatActivity() {
+class FormularioProdutoActivity : UsuarioBaseActivity() {
 
     private val binding by lazy {
         ActivityFormularioProdutoBinding.inflate(layoutInflater)
@@ -53,14 +54,8 @@ class FormularioProdutoActivity : AppCompatActivity() {
 
         job = scope.launch {
             withContext(Dispatchers.IO) {
-                this@FormularioProdutoActivity.dataStore.data.collect { preferences ->
-                    preferences[usuarioLogadoPreferences]?.let { id ->
-                        launch {
-                            usuarioDao.buscaPorId(id).collect { usuario ->
-                                Log.i("FormularioProdutos", "onCreate: $usuario")
-                            }
-                        }
-                    }
+                usuario.filterNotNull().collect {
+                    Log.i("FormularioProdutos", "onCreate: $it")
                 }
             }
         }
